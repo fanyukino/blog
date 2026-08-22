@@ -2,8 +2,7 @@
 export const SITE_TITLE = 'yukino sekai';
 
 // 博客首页的分类层级。
-// slug 对应 GitBook 分组同步到仓库后的文件夹名，label 是首页展示的名称。
-// 若 GitBook 同步出的文件夹名与 slug 不一致，改 slug 即可。
+// slug 对应仓库里的分类文件夹名，label 是首页展示的名称。
 export const CATEGORIES = [
   { slug: 'cs', label: 'CS' },
   { slug: 'book-review', label: '书评' },

@@ -1,4 +1,4 @@
-// 从 Markdown 正文中提取第一个 H1（GitBook 页面标题通常是正文第一个 H1）
+// 从 Markdown 正文中提取第一个 H1（标题写在正文里时用它做卡片标题）
 export function firstHeading(body: string): string | undefined {
   return body.match(/^#\s+(.+)$/m)?.[1];
 }

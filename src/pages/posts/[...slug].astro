@@ -21,7 +21,7 @@ interface Props {
 const { post } = Astro.props;
 const { Content, headings } = await render(post);
 
-// GitBook 的页面标题通常是正文第一个 H1，此时由正文自己渲染，避免重复标题
+// 标题写在正文第一个 H1 里时由正文自己渲染，避免重复标题
 const title = post.data.title ?? headings[0]?.text ?? post.id;
 const hasFrontmatterTitle = Boolean(post.data.title);
 ---
