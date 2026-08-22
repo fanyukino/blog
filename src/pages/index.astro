@@ -1,42 +1,73 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import PostCard from '../components/PostCard.astro';
 import { getCollection } from 'astro:content';
-import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
-import { postHref, formatDate, firstHeading } from '../utils';
+import { SITE_TITLE, CATEGORIES } from '../consts';
 
-const posts = (await getCollection('posts'))
-  .filter((post) => !post.data.hidden)
+const posts = (await getCollection('posts')).filter((post) => !post.data.hidden);
+
+// 按分类归类：id 形如 'cs/hello-world'，第一段路径与分类 slug 或 label 匹配（不区分大小写）
+const topDir = (post: { id: string }) => post.id.split('/')[0]?.toLowerCase() ?? '';
+
+const categorized = CATEGORIES.map((cat) => ({
+  ...cat,
+  posts: posts
+    .filter(
+      (post) =>
+        topDir(post) === cat.slug.toLowerCase() ||
+        topDir(post) === cat.label.toLowerCase(),
+    )
+    .sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0)),
+}));
+
+// 不属于任何分类的文章（如仓库根目录的页面）归入「其他」
+const uncategorized = posts
+  .filter((post) => !categorized.some((cat) => cat.posts.includes(post)))
   .sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0));
+
+const total =
+  categorized.reduce((n, cat) => n + cat.posts.length, 0) + uncategorized.length;
 ---
 
 <Layout>
   <section class="hero">
     <h1>{SITE_TITLE}</h1>
-    <p class="hero-desc">{SITE_DESCRIPTION}</p>
   </section>
-  <section class="post-list">
-    {
-      posts.length === 0 ? (
-        <p class="empty">
-          暂无文章。在 GitBook 中新建页面并同步到仓库后，这里会自动出现内容。
-        </p>
-      ) : (
-        posts.map((post) => (
-          <article class="post-card">
-            <a href={postHref(post.id)}>
-              <h2>{post.data.title ?? firstHeading(post.body ?? '') ?? post.id}</h2>
-              {post.data.description && (
-                <p class="post-desc">{post.data.description}</p>
-              )}
-              {post.data.date && (
-                <time class="post-date" datetime={post.data.date.toISOString()}>
-                  {formatDate(post.data.date)}
-                </time>
-              )}
-            </a>
-          </article>
-        ))
-      )
-    }
-  </section>
+  {
+    total === 0 && (
+      <p class="empty">
+        暂无文章。在 GitBook 中新建页面并同步到仓库后，这里会自动出现内容。
+      </p>
+    )
+  }
+  {
+    categorized.map((cat) => (
+      <section class="category">
+        <h2 class="category-title">{cat.label}</h2>
+        {
+          cat.posts.length > 0 ? (
+            <div class="post-list">
+              {cat.posts.map((post) => (
+                <PostCard post={post} />
+              ))}
+            </div>
+          ) : (
+            <p class="empty-cat">暂无内容</p>
+          )
+        }
+      </section>
+    ))
+  }
+  {
+    uncategorized.length > 0 && (
+      <section class="category">
+        <h2 class="category-title">其他</h2>
+        <div class="post-list">
+          {uncategorized.map((post) => (
+            <PostCard post={post} />
+          ))}
+        </div>
+      </section>
+    )
+  }
 </Layout>

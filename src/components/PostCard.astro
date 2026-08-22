@@ -1,0 +1,22 @@
+---
+import { postHref, formatDate, firstHeading } from '../utils';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+---
+
+<article class="post-card">
+  <a href={postHref(post.id)}>
+    <h3>{post.data.title ?? firstHeading(post.body ?? '') ?? post.id}</h3>
+    {post.data.description && <p class="post-desc">{post.data.description}</p>}
+    {post.data.date && (
+      <time class="post-date" datetime={post.data.date.toISOString()}>
+        {formatDate(post.data.date)}
+      </time>
+    )}
+  </a>
+</article>
