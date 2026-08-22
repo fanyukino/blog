@@ -32,6 +32,8 @@ const posts = defineCollection({
     updated: z.coerce.date().optional().catch(undefined),
     // hidden: true 的文章不会出现在列表里
     hidden: z.boolean().optional(),
+    // 标签，用于标签页与搜索
+    tags: z.array(z.string()).optional().catch(undefined),
   }),
 });
 

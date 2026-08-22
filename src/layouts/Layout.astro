@@ -25,7 +25,11 @@ const pageTitle = title ? `${title} · ${SITE_TITLE}` : SITE_TITLE;
         <a class="site-title" href={homeHref}>{SITE_TITLE}</a>
         <nav class="site-nav">
           <a href={homeHref}>首页</a>
+          <a href={`${homeHref}/tags/`}>标签</a>
         </nav>
+        <form class="site-search" action={`${homeHref}/search/`} method="get">
+          <input type="search" name="q" placeholder="搜索…" aria-label="搜索" />
+        </form>
       </div>
     </header>
     <main class="site-main">

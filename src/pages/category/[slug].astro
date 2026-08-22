@@ -1,0 +1,46 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getCollection } from 'astro:content';
+import { CATEGORIES } from '../../consts';
+import { matchesCategory, homeHref } from '../../utils';
+
+export async function getStaticPaths() {
+  return [
+    ...CATEGORIES.map((cat) => ({ params: { slug: cat.slug } })),
+    // 「其他」分类：不属于任何预设分类的文章
+    { params: { slug: 'other' } },
+  ];
+}
+
+const { slug } = Astro.params;
+
+const posts = (await getCollection('posts')).filter((post) => !post.data.hidden);
+const cat = CATEGORIES.find((c) => c.slug === slug);
+const list = cat
+  ? posts.filter((post) => matchesCategory(post.id, cat))
+  : posts.filter((post) => !CATEGORIES.some((c) => matchesCategory(post.id, c)));
+const sorted = [...list].sort(
+  (a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0),
+);
+const label = cat?.label ?? '其他';
+---
+
+<Layout title={label}>
+  <header class="page-header">
+    <a class="back-link" href={homeHref}>← 返回首页</a>
+    <h1>{label}</h1>
+    <p class="page-count">{sorted.length} 篇文章</p>
+  </header>
+  {
+    sorted.length > 0 ? (
+      <div class="post-list">
+        {sorted.map((post) => (
+          <PostCard post={post} />
+        ))}
+      </div>
+    ) : (
+      <p class="empty">该分类下暂无文章</p>
+    )
+  }
+</Layout>

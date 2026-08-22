@@ -3,6 +3,11 @@ export function firstHeading(body: string): string | undefined {
   return body.match(/^#\s+(.+)$/m)?.[1];
 }
 
+// 没有标题时的兜底：取 id 最后一段（文件名，不含目录前缀）
+export function baseName(id: string): string {
+  return id.split('/').pop() ?? id;
+}
+
 // BASE_URL 可能是 '/blog' 或 '/'（GitHub Pages 子路径），统一去掉末尾斜杠再拼接
 const BASE = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '');
 
@@ -20,4 +25,28 @@ export function formatDate(date?: Date): string | undefined {
     month: 'long',
     day: 'numeric',
   });
+}
+
+// 标签链接
+export function tagHref(tag: string): string {
+  return `${homeHref}/tags/${encodeURIComponent(tag)}`;
+}
+
+// 分类链接
+export function categoryHref(slug: string): string {
+  return `${homeHref}/category/${encodeURIComponent(slug)}`;
+}
+
+// 文章 id 的第一段路径（对应分类文件夹名，小写）
+export function topDir(id: string): string {
+  return id.split('/')[0]?.toLowerCase() ?? '';
+}
+
+// 判断文章是否属于某个分类（文件夹名与分类 slug 或 label 匹配，不区分大小写）
+export function matchesCategory(
+  id: string,
+  cat: { slug: string; label: string },
+): boolean {
+  const top = topDir(id);
+  return top === cat.slug.toLowerCase() || top === cat.label.toLowerCase();
 }

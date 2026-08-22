@@ -1,0 +1,125 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="搜索">
+  <section class="search-page">
+    <input
+      id="search-input"
+      type="search"
+      placeholder="搜索标题、标签、正文…"
+      autocomplete="off"
+      aria-label="搜索"
+    />
+    <p id="search-status" class="search-status"></p>
+    <div id="search-results" class="search-results"></div>
+  </section>
+</Layout>
+
+<script>
+  // 部署在子路径（如 /blog）时，请求地址需要带上 BASE_URL
+  const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
+  const input = document.getElementById('search-input') as HTMLInputElement;
+  const status = document.getElementById('search-status') as HTMLElement;
+  const results = document.getElementById('search-results') as HTMLElement;
+
+  interface SearchEntry {
+    title: string;
+    description: string;
+    tags: string[];
+    category: string;
+    href: string;
+    body: string;
+  }
+
+  let index: SearchEntry[] = [];
+  let ready = false;
+
+  // 支持从页头搜索框跳转过来（/search/?q=xxx）
+  const initial = new URLSearchParams(window.location.search).get('q') ?? '';
+  input.value = initial;
+
+  const norm = (s: string) => s.toLowerCase();
+
+  function el(tag: string, cls?: string, text?: string): HTMLElement {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  // 高亮命中的片段（大小写不敏感的查找）
+  function highlight(text: string, q: string): Node[] {
+    if (!q) return [document.createTextNode(text)];
+    const idx = text.toLowerCase().indexOf(q);
+    if (idx < 0) return [document.createTextNode(text)];
+    return [
+      document.createTextNode(text.slice(0, idx)),
+      el('mark', undefined, text.slice(idx, idx + q.length)),
+      document.createTextNode(text.slice(idx + q.length)),
+    ];
+  }
+
+  function render(list: SearchEntry[], q: string) {
+    results.replaceChildren();
+    for (const entry of list) {
+      const a = el('a', 'search-result') as HTMLAnchorElement;
+      a.href = entry.href;
+
+      a.appendChild(el('p', 'search-cat', entry.category));
+
+      const h3 = el('h3');
+      highlight(entry.title, q).forEach((n) => h3.appendChild(n));
+      a.appendChild(h3);
+
+      const text =
+        entry.description || entry.body.replace(/\s+/g, ' ').slice(0, 120);
+      if (text) {
+        const desc = el('p', 'search-result-desc');
+        highlight(text, q).forEach((n) => desc.appendChild(n));
+        a.appendChild(desc);
+      }
+
+      if (entry.tags.length > 0) {
+        const tagsEl = el('div', 'post-tags');
+        for (const tag of entry.tags) {
+          tagsEl.appendChild(el('span', 'tag-chip', `#${tag}`));
+        }
+        a.appendChild(tagsEl);
+      }
+
+      results.appendChild(a);
+    }
+  }
+
+  function run(raw: string) {
+    const q = norm(raw.trim());
+    if (!ready) return;
+    if (!q) {
+      status.textContent = '';
+      results.replaceChildren();
+      return;
+    }
+    const matched = index.filter((entry) =>
+      [entry.title, entry.description, ...entry.tags, entry.body].some((f) =>
+        norm(f ?? '').includes(q),
+      ),
+    );
+    status.textContent = `找到 ${matched.length} 条结果`;
+    render(matched, q);
+  }
+
+  input.addEventListener('input', () => run(input.value));
+
+  fetch(`${base}/search.json`)
+    .then((r) => r.json())
+    .then((data: SearchEntry[]) => {
+      index = data;
+      ready = true;
+      if (initial) run(initial);
+    })
+    .catch(() => {
+      ready = true;
+      status.textContent = '搜索索引加载失败，请稍后重试';
+    });
+</script>

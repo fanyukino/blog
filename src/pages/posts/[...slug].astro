@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
-import { formatDate, homeHref } from '../../utils';
+import { formatDate, homeHref, tagHref, baseName } from '../../utils';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('posts')).filter(
@@ -22,8 +22,12 @@ const { post } = Astro.props;
 const { Content, headings } = await render(post);
 
 // 标题写在正文第一个 H1 里时由正文自己渲染，避免重复标题
-const title = post.data.title ?? headings[0]?.text ?? post.id;
+const title =
+  post.data.title ??
+  headings.find((h) => h.depth === 1)?.text ??
+  baseName(post.id);
 const hasFrontmatterTitle = Boolean(post.data.title);
+const tags = post.data.tags ?? [];
 ---
 
 <Layout title={title} description={post.data.description}>
@@ -53,6 +57,13 @@ const hasFrontmatterTitle = Boolean(post.data.title);
       <Content />
     </div>
     <footer class="post-footer">
+      {tags.length > 0 && (
+        <div class="post-tags">
+          {tags.map((tag) => (
+            <a class="tag-chip" href={tagHref(tag)}>#{tag}</a>
+          ))}
+        </div>
+      )}
       <a href={homeHref}>← 返回首页</a>
     </footer>
   </article>
