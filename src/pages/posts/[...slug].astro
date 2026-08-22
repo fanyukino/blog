@@ -1,0 +1,59 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import { formatDate, homeHref } from '../../utils';
+
+export async function getStaticPaths() {
+  const posts = (await getCollection('posts')).filter(
+    (post) => !post.data.hidden,
+  );
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+
+// GitBook 的页面标题通常是正文第一个 H1，此时由正文自己渲染，避免重复标题
+const title = post.data.title ?? headings[0]?.text ?? post.id;
+const hasFrontmatterTitle = Boolean(post.data.title);
+---
+
+<Layout title={title} description={post.data.description}>
+  <article class="post">
+    {
+      hasFrontmatterTitle && (
+        <header class="post-header">
+          <h1>{post.data.title}</h1>
+        </header>
+      )
+    }
+    {(post.data.date || post.data.updated) && (
+      <div class="post-meta">
+        {post.data.date && (
+          <time datetime={post.data.date.toISOString()}>
+            发布于 {formatDate(post.data.date)}
+          </time>
+        )}
+        {post.data.updated && (
+          <time datetime={post.data.updated.toISOString()}>
+            · 更新于 {formatDate(post.data.updated)}
+          </time>
+        )}
+      </div>
+    )}
+    <div class="post-content">
+      <Content />
+    </div>
+    <footer class="post-footer">
+      <a href={homeHref}>← 返回首页</a>
+    </footer>
+  </article>
+</Layout>

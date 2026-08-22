@@ -1,0 +1,42 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+import { postHref, formatDate, firstHeading } from '../utils';
+
+const posts = (await getCollection('posts'))
+  .filter((post) => !post.data.hidden)
+  .sort((a, b) => (b.data.date?.getTime() ?? 0) - (a.data.date?.getTime() ?? 0));
+---
+
+<Layout>
+  <section class="hero">
+    <h1>{SITE_TITLE}</h1>
+    <p class="hero-desc">{SITE_DESCRIPTION}</p>
+  </section>
+  <section class="post-list">
+    {
+      posts.length === 0 ? (
+        <p class="empty">
+          暂无文章。在 GitBook 中新建页面并同步到仓库后，这里会自动出现内容。
+        </p>
+      ) : (
+        posts.map((post) => (
+          <article class="post-card">
+            <a href={postHref(post.id)}>
+              <h2>{post.data.title ?? firstHeading(post.body ?? '') ?? post.id}</h2>
+              {post.data.description && (
+                <p class="post-desc">{post.data.description}</p>
+              )}
+              {post.data.date && (
+                <time class="post-date" datetime={post.data.date.toISOString()}>
+                  {formatDate(post.data.date)}
+                </time>
+              )}
+            </a>
+          </article>
+        ))
+      )
+    }
+  </section>
+</Layout>
